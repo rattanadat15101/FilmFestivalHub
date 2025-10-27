@@ -14,7 +14,7 @@ import filmmakerRoutes from './routes/filmmakerRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import qaRoutes from './routes/qaRoutes.js';
 import genreRoutes from './routes/genreRoutes.js';
-
+import authRoutes from './routes/authRoutes.js';
 // หา Path ของ Directory ปัจจุบัน
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,6 +39,7 @@ app.use(express.json()); // สำหรับรับ body ที่เป็�
 app.use(express.static(path.join(__dirname, '../client/dist')));
 
 // --- 3. API Routes ---
+app.use('/api/auth', authRoutes);
 app.use('/api/films', filmRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/filmmaker', filmmakerRoutes);

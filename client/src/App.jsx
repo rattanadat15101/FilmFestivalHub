@@ -19,6 +19,9 @@ import QASchedulePage from './pages/QASchedulePage';
 import LiveQAPage from './pages/LiveQAPage';
 import FilmmakerStudioPage from './pages/FilmmakerStudioPage';
 import EditFilmPage from './pages/EditFilmPage';
+// ⬇️ 1. Import หน้าใหม่
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // Global styles (คงเดิม)
 const globalStyles = `
@@ -80,6 +83,10 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/schedule" element={<QASchedulePage />} />
+          {/* ⬇️ 2. เพิ่ม Route ใหม่ */}
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+
 
           {/* ✅ Protected Routes (ต้องล็อกอินก่อนถึงเข้าได้) */}
           <Route path="/film/:id" element={<ProtectedRoute><FilmDetailPage /></ProtectedRoute>} />
@@ -91,6 +98,7 @@ function App() {
           <Route path="/studio/edit/:filmId" element={<ProtectedRoute><EditFilmPage /></ProtectedRoute>} />
 
           {/* ✅ Admin Routes (เฉพาะ Admin เท่านั้น) */}
+          {/* (ระบบ Route Admin ของคุณดีอยู่แล้ว ไม่ต้องแก้) */}
           <Route
             path="/admin"
             element={

@@ -8,56 +8,10 @@ import { authMiddleware } from '../middleware/authMiddleware.js';
 const router = express.Router();
 
 /* =========================
-   🟩 LOGIN (JWT AUTH)
+   ❌ (REMOVED) LOGIN (JWT AUTH)
    POST /api/user/login
+   (ย้าย Logic ทั้งหมดไปที่ /server/routes/authRoutes.js แล้ว)
    ========================= */
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    // 1️⃣ ดึงข้อมูลผู้ใช้จากตาราง profiles
-    const { data: user, error } = await supabase
-      .from('profiles')
-      .select('id, email, password_hash, is_admin')
-      .eq('email', email)
-      .single();
-
-    if (error || !user) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
-
-    // 2️⃣ ตรวจสอบรหัสผ่าน (สมมุติว่า password เก็บเป็น plain-text)
-    // ❗ หากใช้ bcrypt ให้เปลี่ยนเป็น bcrypt.compare(password, user.password_hash)
-    if (user.password_hash !== password) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
-
-    // 3️⃣ สร้าง JWT token
-    const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        is_admin: user.is_admin ?? false,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' } // อายุ 7 วัน
-    );
-
-    // 4️⃣ ส่ง token กลับให้ client
-    res.status(200).json({
-      message: 'Login successful!',
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        is_admin: user.is_admin ?? false,
-      },
-    });
-  } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ message: 'Server error', error: err.message });
-  }
-});
 
 /* =====================================================
    🔽 ส่วนอื่น ๆ (mock-subscribe, apply-filmmaker, etc.)
@@ -210,13 +164,20 @@ router.post('/request-qa', authMiddleware, async (req, res) => {
   }
 });
 
+// ---
+// GET /api/user/profile
+// (สำคัญมาก) Endpoint นี้จะใช้โดย AuthContext เพื่อดึงข้อมูล User
+// ---
 router.get('/profile', authMiddleware, async (req, res) => {
-  const userId = req.user.id;
+  // req.user มาจาก authMiddleware (payload ของ JWT)
+  const userId = req.user.id; 
 
   try {
+    // ดึงข้อมูล "ล่าสุด" จาก DB (เผื่อมีการเปลี่ยนสิทธิ์)
+    // (ไม่ควรดึง password_hash กลับไป!)
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, email, username, created_at, is_admin, is_filmmaker, is_subscriber, subscription_end_date')
       .eq('id', userId)
       .single();
 

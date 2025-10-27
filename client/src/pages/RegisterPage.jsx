@@ -1,7 +1,8 @@
 // /client/src/pages/RegisterPage.jsx
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '../supabaseClient'; // Path นี้ถูกต้อง
+import axios from 'axios'; // ⬅️ Import axios
+// import { supabase } from '../supabaseClient'; // (ไม่ใช้อีกต่อไป)
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -18,25 +19,22 @@ function RegisterPage() {
     setMessage('');
     setLoading(true);
 
+    if (password.length < 6) {
+        setError("Password must be at least 6 characters.");
+        setLoading(false);
+        return;
+    }
+
     try {
-      // 1. เรียกใช้ Supabase Auth signUp
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      // 1. (สำคัญ) เปลี่ยนมาเรียก API ของเรา (Node.js)
+      await axios.post('http://localhost:4000/api/auth/register', {
         email: email,
         password: password,
-        options: {
-          // 2. (สำคัญ) ส่งข้อมูลเพิ่มเติม (username) ไปให้ Trigger
-          // (Trigger 'handle_new_user' ใน Supabase จะรับค่่านี้ไปใส่ในตาราง profiles)
-          data: {
-            username: username
-          }
-        }
+        username: username
       });
 
-      if (signUpError) throw signUpError;
-
-      // 3. แสดงข้อความสำเร็จ
-      // (Supabase ส่วนใหญ่จะบังคับให้ยืนยันอีเมล)
-      setMessage('Registration successful! Please check your email to confirm your account.');
+      // 2. แสดงข้อความสำเร็จ
+      setMessage('Registration successful! Please login.');
       setLoading(false);
 
       // (เคลียร์ฟอร์ม)
@@ -44,16 +42,17 @@ function RegisterPage() {
       setPassword('');
       setUsername('');
       
-      // (ไม่ต้อง redirect ทันที ให้ user ไปเช็กอีเมลก่อน)
-      // setTimeout(() => navigate('/login'), 5000); // อาจจะ redirect ไปหน้า login ภายหลัง
+      // 3. (ทางเลือก) ส่งไปหน้า Login หลังจาก 2 วินาที
+      setTimeout(() => navigate('/login'), 2000);
 
     } catch (err) {
-      setError(err.message || 'Failed to register');
+      // 4. (สำคัญ) รับ Error จาก Axios
+      setError(err.response?.data?.message || 'Failed to register');
       setLoading(false);
     }
   };
 
-  // --- Styles ---
+  // --- Styles (คงเดิม) ---
   const pageStyle = {
     display: 'flex',
     alignItems: 'center',
@@ -71,7 +70,15 @@ function RegisterPage() {
   };
   const inputGroupStyle = { marginBottom: '1rem' };
   const labelStyle = { display: 'block', marginBottom: '5px', color: '#aaa' };
-  const inputStyle = { width: '100%', boxSizing: 'border-box' };
+  const inputStyle = { 
+      width: '100%', 
+      boxSizing: 'border-box',
+      background: '#222',
+      color: '#fff',
+      border: '1px solid #333',
+      padding: '0.5rem',
+      borderRadius: '4px',
+  };
   const buttonStyle = {
     width: '100%',
     padding: '12px',
@@ -128,12 +135,12 @@ function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength="6" // Supabase บังคับอย่างน้อย 6 ตัว
+                minLength="6"
                 style={inputStyle}
               />
             </div>
 
-            {error && <p className="error-message" style={{ color: 'red', marginTop: '1rem' }}>{error}</p>}
+            {error && <p className="error-message" style={{ color: 'red', marginTop: '1rem', textAlign: 'center' }}>{error}</p>}
             
             <button type="submit" disabled={loading} style={loading ? disabledButtonStyle : buttonStyle}>
               {loading ? 'Registering...' : 'Register'}
@@ -145,7 +152,6 @@ function RegisterPage() {
         {message && (
             <div style={{ textAlign: 'center' }}>
                 <p className="success-message" style={{ color: 'lightgreen', fontSize: '1.1em' }}>{message}</p>
-                <p style={{ color: '#aaa' }}>Please check your inbox (and spam folder) to complete your registration.</p>
             </div>
         )}
 

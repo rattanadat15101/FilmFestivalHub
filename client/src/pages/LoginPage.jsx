@@ -16,16 +16,18 @@ function LoginPage() {
     setError('');
     setLoading(true);
 
-    const result = await login(email, password);
+    // ⛔️ Logic นี้มาจาก AuthContext (ที่เราเขียนใหม่)
+    const result = await login(email, password); 
+    
     if (result.success) {
-      navigate('/'); // ไปหน้าแรก (หรือจะเปลี่ยนเป็น /admin ก็ได้)
+      navigate('/'); // ไปหน้าแรก
     } else {
       setError(result.message || 'Failed to login');
       setLoading(false);
     }
   };
 
-  // --- Styles ---
+  // --- Styles (คงเดิม) ---
   const pageStyle = {
     display: 'flex',
     alignItems: 'center',
@@ -71,6 +73,7 @@ function LoginPage() {
     cursor: 'not-allowed',
   };
   const linkStyle = { color: '#e5b80b', fontWeight: 'bold' };
+  const smallLinkStyle = { color: '#aaa', fontSize: '0.9em', textDecoration: 'underline' }; // ⬅️ สไตล์ใหม่
 
   return (
     <div style={pageStyle}>
@@ -113,8 +116,16 @@ function LoginPage() {
             />
           </div>
 
+          {/* ⬅️ 1. เพิ่ม Link สำหรับ Reset Password */}
+          <div style={{ textAlign: 'right', marginTop: '-0.5rem', marginBottom: '1rem' }}>
+              <Link to="/forgot-password" style={smallLinkStyle}>
+                  Forgot Password?
+              </Link>
+          </div>
+
+
           {error && (
-            <p className="error-message" style={{ color: 'red', marginTop: '1rem' }}>
+            <p className="error-message" style={{ color: 'red', marginTop: '1rem', textAlign: 'center' }}>
               {error}
             </p>
           )}

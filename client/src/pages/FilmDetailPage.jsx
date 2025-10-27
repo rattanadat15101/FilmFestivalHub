@@ -1,0 +1,162 @@
+// /client/src/pages/FilmDetailPage.jsx
+import React from 'react';
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom'; // Import Link
+import { useAuth } from '../contexts/AuthContext'; // Path นี้ถูกต้อง
+import axios from 'axios';
+import ReactPlayer from 'react-player';
+
+import ReviewList from '../components/ReviewList'; // Path นี้ถูกต้อง
+import ReviewForm from '../components/ReviewForm'; // Path นี้ถูกต้อง
+
+function FilmDetailPage() {
+  const { id: filmId } = useParams();
+  const { session } = useAuth(); // ดึง session มาใช้เช็ก Token
+
+  const [film, setFilm] = useState(null); // เก็บข้อมูลหนัง (อาจจะได้มาบางส่วน)
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null); // เก็บข้อความ Error
+  const [isPremiumBlocked, setIsPremiumBlocked] = useState(false); // เช็กว่าโดนบล็อกเพราะ Premium ไหม
+  const [reviewListKey, setReviewListKey] = useState(Date.now()); // Key สำหรับ re-render ReviewList
+
+  useEffect(() => {
+    // รีเซ็ตสถานะเมื่อ filmId เปลี่ยน
+    setFilm(null);
+    setError(null);
+    setIsPremiumBlocked(false);
+    setLoading(true);
+
+    if (!session?.access_token) {
+        // ถ้าไม่มี session token ให้หยุดโหลด (ProtectedRoute ควรจัดการแล้ว แต่ป้องกันไว้)
+        setError("Authentication required.");
+        setLoading(false);
+        console.error("FilmDetailPage: No access token found in session.");
+        return;
+    };
+
+    // ฟังก์ชัน async ภายใน useEffect
+    const fetchFilmData = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:4000/api/films/${filmId}`,
+          {
+            headers: { Authorization: `Bearer ${session.access_token}` }
+          }
+        );
+        // ถ้าสำเร็จ (Status 200)
+        setFilm(response.data);
+        setIsPremiumBlocked(false);
+        setError(null);
+
+      } catch (err) {
+        console.error("Error fetching film:", err.response || err); // ดู Error จริงๆ ใน Console
+        if (err.response) {
+          if (err.response.status === 403) {
+            // ถ้าโดนบล็อกเพราะ Premium (403 Forbidden)
+            setIsPremiumBlocked(true);
+            setError(err.response.data?.message || 'This is premium content.');
+            // พยายาม set ข้อมูลพื้นฐานถ้า Backend ส่งมา (basicInfo)
+            if (err.response.data?.basicInfo) {
+              setFilm(err.response.data.basicInfo); // แสดงข้อมูลพื้นฐานแม้จะดู VDO ไม่ได้
+            }
+          } else if (err.response.status === 404) {
+            setError('Film not found or not available.');
+          } else {
+            setError('Could not load film details. Please try again later.');
+          }
+        } else {
+             // กรณี Network error หรือ Server ไม่ตอบสนอง
+             setError('Could not connect to the server. Please check your connection.');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFilmData(); // เรียกใช้ฟังก์ชัน
+
+  }, [filmId, session]); // Dependency คือ filmId และ session
+
+
+  // Styles
+  const pageStyle = { padding: '2rem', maxWidth: '1000px', margin: '0 auto' }; // กว้างขึ้นเล็กน้อย
+  const errorBoxStyle = { border: '2px dashed #E74C3C', padding: '2rem', textAlign: 'center', background: '#2f1a1a', borderRadius: '8px', color: '#f4f4f4' };
+  const premiumBoxStyle = { border: '2px dashed #e5b80b', padding: '2rem', textAlign: 'center', background: '#2c2a1f', borderRadius: '8px', color: '#f4f4f4'};
+  const playerWrapperStyle = { position: 'relative', paddingTop: '56.25%', marginBottom: '2rem', background: '#000' }; // 16:9 aspect ratio, black background
+  const playerStyle = { position: 'absolute', top: 0, left: 0 };
+  const titleStyle = { color: '#f4f4f4', marginBottom: '0.5rem' };
+  const synopsisStyle = { color: '#aaa', marginBottom: '2rem', lineHeight: '1.7' };
+  const premiumButtonStyle = { display: 'inline-block', background: '#e5b80b', color: '#141414', padding: '1rem 2rem', textDecoration: 'none', borderRadius: '5px', marginTop: '1rem', fontWeight: 'bold' };
+
+  if (loading) {
+      return <div style={{...pageStyle, textAlign: 'center', color: '#aaa'}}>Loading film...</div>;
+  }
+
+  return (
+    <div style={pageStyle}>
+
+      {/* --- กรณีโดนบล็อกเพราะ Premium --- */}
+      {isPremiumBlocked && (
+         <div style={premiumBoxStyle}>
+            {/* แสดง Title/Synopsis (ถ้ามีข้อมูล film จาก basicInfo) */}
+            {film ? (
+                <>
+                  <h1 style={{...titleStyle, color: '#e5b80b' }}>{film.title} (Premium)</h1>
+                  <p style={synopsisStyle}>{film.synopsis}</p>
+                </>
+            ) : (
+                <h1 style={{...titleStyle, color: '#e5b80b' }}>Premium Content Locked</h1>
+            )}
+            <p style={{ fontSize: '1.2em', color: '#f4f4f4', fontWeight: 'bold' }}>
+              {error} {/* แสดงข้อความ "This is premium content..." */}
+            </p>
+            <Link to="/subscribe" style={premiumButtonStyle}>
+              Upgrade to Premium
+            </Link>
+         </div>
+      )}
+
+      {/* --- กรณี Error อื่นๆ --- */}
+      {!loading && error && !isPremiumBlocked && (
+        <div style={errorBoxStyle}>
+          <h1>Error Loading Film</h1>
+          <p>{error}</p>
+          <Link to="/" style={{ color: '#e5b80b' }}>Go back to Home</Link>
+        </div>
+      )}
+
+      {/* --- กรณีโหลดสำเร็จ --- */}
+      {!loading && !error && film && (
+        <>
+          <h1 style={titleStyle}>{film.title}</h1>
+          <p style={synopsisStyle}>{film.synopsis}</p>
+
+          {/* --- Player --- */}
+          <div style={playerWrapperStyle}>
+            <ReactPlayer
+              url={film.video_url}
+              controls
+              width="100%"
+              height="100%"
+              style={playerStyle}
+              // Optional: Add config for specific players if needed
+              // config={{ youtube: { playerVars: { showinfo: 1 } } }}
+            />
+          </div>
+
+          <hr />
+
+          {/* --- Review Section --- */}
+          <ReviewForm
+            filmId={film.id}
+            onReviewPosted={() => setReviewListKey(Date.now())} // Trigger re-render of ReviewList
+          />
+
+          <ReviewList filmId={film.id} key={reviewListKey} />
+        </>
+      )}
+    </div>
+  );
+}
+
+export default FilmDetailPage;

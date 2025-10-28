@@ -1,9 +1,9 @@
 // /client/src/pages/HomePage.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; // Path นี้ถูกต้อง
+import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import FilmDetailsModal from '../components/FilmDetailsModal'; // Path นี้ถูกต้อง
+import FilmDetailsModal from '../components/FilmDetailsModal';
 
 function HomePage() {
   const { session } = useAuth();
@@ -27,7 +27,8 @@ function HomePage() {
     const fetchGenres = async () => {
       try {
         console.log("Fetching genres...");
-        const response = await axios.get('http://localhost:4000/api/genres');
+        // แก้ไข: เปลี่ยนจาก 'http://localhost:4000/api/genres' เป็น Path สัมพัทธ์
+        const response = await axios.get('/api/genres'); 
         console.log("Genres API response:", response.data);
         if (Array.isArray(response.data)) {
           setGenres(response.data);
@@ -51,9 +52,14 @@ function HomePage() {
       const params = new URLSearchParams();
       if (currentSearchTerm) params.append('search', currentSearchTerm);
       if (currentGenreId) params.append('genre', currentGenreId);
-      const apiUrl = `http://localhost:4000/api/films?${params.toString()}`;
+      
+      // แก้ไข: เปลี่ยนจาก apiUrl เต็มรูปแบบ เป็น Path สัมพัทธ์
+      const apiUrl = `/api/films?${params.toString()}`; 
+      
       console.log("Fetching films from:", apiUrl);
-      const response = await axios.get(apiUrl);
+      // axios จะใช้โดเมนปัจจุบัน (Codespace URL) แล้วเรียกไปที่ /api/films
+      const response = await axios.get(apiUrl); 
+      
       if (Array.isArray(response.data)) {
           setFilms(response.data);
       } else {
@@ -68,12 +74,12 @@ function HomePage() {
     } finally {
       setLoading(false);
     }
-  }, []); // Removed fetchFilms dependency as it caused potential infinite loops
+  }, []);
 
   // Trigger fetchFilms when search term or genre changes
   useEffect(() => {
-    // Set base URL for axios if not already set globally
-    axios.defaults.baseURL = 'http://localhost:4000'; // Make sure this is correct
+    // *** แก้ไข: ลบบรรทัดนี้ออก เพราะเราจะใช้ Path สัมพัทธ์แทนการตั้งค่า Base URL ***
+    // axios.defaults.baseURL = 'http://localhost:4000'; // Make sure this is correct 
     fetchFilms(debouncedTerm, selectedGenreId);
   }, [debouncedTerm, selectedGenreId, fetchFilms]); // Dependencies that trigger re-fetch
 
@@ -87,7 +93,7 @@ function HomePage() {
       setSelectedFilmForModal(null);
   };
 
-  // Styles
+  // Styles (ไม่มีการเปลี่ยนแปลง)
   const filterButtonStyle = {
     background: '#333',
     color: '#f4f4f4',
@@ -138,8 +144,8 @@ function HomePage() {
             films.map(film => (
               // Film Card container
               <div key={film.id} style={{ borderRadius: '6px', overflow: 'hidden', backgroundColor: '#222', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.4)', transition: 'transform 0.2s ease', cursor: 'pointer' }}
-                   onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.03)'} // Slight zoom on hover
-                   onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.03)'} // Slight zoom on hover
+                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
               >
                 {/* Link wrapping the image */}
                 <Link to={session ? `/film/${film.id}` : '/login'} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>

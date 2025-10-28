@@ -25,7 +25,7 @@ function ReviewForm({ filmId, onReviewPosted }) {
 
     try {
       await axios.post(
-        'http://localhost:4000/api/reviews', // POST ไปยัง Backend
+        '/api/reviews', // POST ไปยัง Backend
         {
           filmId: filmId,
           rating: parseInt(rating),

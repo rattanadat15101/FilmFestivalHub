@@ -16,7 +16,7 @@ function QASchedulePage() {
         setLoading(true);
         setError('');
         // Endpoint นี้ Public ไม่ต้องใช้ Token
-        const response = await axios.get('http://localhost:4000/api/qa/schedule');
+        const response = await axios.get('/api/qa/schedule');
         
         if (Array.isArray(response.data)) {
             setSchedule(response.data);

@@ -32,7 +32,7 @@ function EditFilmPage() {
     setError('');
     try {
       // ดึง Genre ทั้งหมดก่อน
-      const genresResponse = await axios.get('http://localhost:4000/api/genres');
+      const genresResponse = await axios.get('/api/genres');
       if (Array.isArray(genresResponse.data)) {
         setGenres(genresResponse.data);
       } else {
@@ -42,7 +42,7 @@ function EditFilmPage() {
 
       // ดึงข้อมูลหนัง (Backend จะส่ง genreIds มาให้)
       const filmResponse = await axios.get(
-        `http://localhost:4000/api/filmmaker/film/${filmId}/details`,
+        `/api/filmmaker/film/${filmId}/details`,
         { headers: { Authorization: `Bearer ${session.access_token}` } }
       );
       const filmData = filmResponse.data;
@@ -92,7 +92,7 @@ function EditFilmPage() {
     try {
       // Send PUT request to the backend
       const response = await axios.put(
-        `http://localhost:4000/api/filmmaker/film/${filmId}`,
+        `/api/filmmaker/film/${filmId}`,
         formData,
         {
           headers: {

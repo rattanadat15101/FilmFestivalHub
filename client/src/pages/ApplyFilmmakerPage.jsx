@@ -23,7 +23,7 @@ function ApplyFilmmakerPage() {
       try {
         // ลองดึงใบสมัครเก่า (Backend จะใช้ RLS เช็กสิทธิ์ให้อ่านเฉพาะของตัวเอง)
         const response = await axios.get(
-          'http://localhost:4000/api/user/my-application', // เราต้องสร้าง Endpoint นี้
+          '/api/user/my-application', // เราต้องสร้าง Endpoint นี้
           { headers: { Authorization: `Bearer ${session.access_token}` } }
         );
         if (response.data) {
@@ -64,7 +64,7 @@ function ApplyFilmmakerPage() {
     }
     try {
       const response = await axios.post(
-        'http://localhost:4000/api/user/apply-filmmaker',
+        '/api/user/apply-filmmaker',
         { reason },
         { headers: { Authorization: `Bearer ${session.access_token}` } }
       );

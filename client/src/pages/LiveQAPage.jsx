@@ -22,7 +22,7 @@ function LiveQAPage() {
     if (!session?.access_token) return; // เช็ก Token ก่อน
     try {
       const messagesRes = await axios.get(
-        `http://localhost:4000/api/qa/messages/${qaId}`,
+        `/api/qa/messages/${qaId}`,
         { headers: { Authorization: `Bearer ${session.access_token}` } }
       );
       if (Array.isArray(messagesRes.data)) {
@@ -45,7 +45,7 @@ function LiveQAPage() {
         
         // ดึง Stream URL
         const sessionRes = await axios.get(
-          `http://localhost:4000/api/qa/session/${qaId}`,
+          `/api/qa/session/${qaId}`,
           { headers: { Authorization: `Bearer ${session.access_token}` } }
         );
         setSessionInfo(sessionRes.data);
@@ -91,7 +91,7 @@ function LiveQAPage() {
     try {
       // 4.1 ส่งแชทไปที่ Backend (Node.js)
       const response = await axios.post(
-        'http://localhost:4000/api/qa/messages',
+        '/api/qa/messages',
         {
           qaId: qaId,
           message: newMessage

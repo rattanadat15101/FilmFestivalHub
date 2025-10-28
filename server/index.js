@@ -32,7 +32,11 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 204
 };
-app.use(cors(corsOptions));
+app.use(cors({
+    origin: '*', // หรือกำหนดเป็นโดเมนของ Codespace Client ของคุณอย่างเฉพาะเจาะจง
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json()); // สำหรับรับ body ที่เป็น JSON
 
 // --- 2. Static Files (SPA Build) ---

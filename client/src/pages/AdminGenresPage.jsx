@@ -18,7 +18,7 @@ function AdminGenresPage() {
             setLoading(true);
             setError(''); // เคลียร์ Error เก่า
             // Endpoint นี้ Public ไม่ต้องใช้ Token ก็ได้ แต่ใส่ไปก็ไม่ผิด
-            const response = await axios.get('http://localhost:4000/api/genres');
+            const response = await axios.get('/api/genres');
             if (Array.isArray(response.data)) {
                 setGenres(response.data);
             } else {
@@ -52,7 +52,7 @@ function AdminGenresPage() {
             return;
         }
         try {
-            await axios.post('http://localhost:4000/api/genres',
+            await axios.post('/api/genres',
                 { name: newGenreName.trim() }, // ส่งชื่อที่ตัดช่องว่างแล้ว
                 { headers: { Authorization: `Bearer ${session.access_token}` } }
             );
@@ -89,7 +89,7 @@ function AdminGenresPage() {
             return;
         }
         try {
-            await axios.put(`http://localhost:4000/api/genres/${editGenreId}`,
+            await axios.put(`/api/genres/${editGenreId}`,
                 { name: editGenreName.trim() },
                 { headers: { Authorization: `Bearer ${session.access_token}` } }
             );
@@ -111,7 +111,7 @@ function AdminGenresPage() {
             return;
         }
         try {
-            await axios.delete(`http://localhost:4000/api/genres/${genreId}`,
+            await axios.delete(`/api/genres/${genreId}`,
                 { headers: { Authorization: `Bearer ${session.access_token}` } }
             );
             fetchGenres(); // โหลดรายการใหม่

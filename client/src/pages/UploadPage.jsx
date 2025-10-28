@@ -25,7 +25,7 @@ function UploadPage() {
   useEffect(() => {
     const fetchGenres = async () => {
       try {
-        const response = await axios.get('http://localhost:4000/api/genres');
+        const response = await axios.get('/api/genres');
         if (Array.isArray(response.data)) {
             setGenres(response.data);
         } else {
@@ -81,7 +81,7 @@ function UploadPage() {
     try {
       // 2. ยิง API ไปยัง Backend
       const response = await axios.post(
-        'http://localhost:4000/api/filmmaker/upload',
+        '/api/filmmaker/upload',
         formData,
         {
           headers: {

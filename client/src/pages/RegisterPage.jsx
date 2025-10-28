@@ -27,7 +27,7 @@ function RegisterPage() {
 
     try {
       // 1. (สำคัญ) เปลี่ยนมาเรียก API ของเรา (Node.js)
-      await axios.post('http://localhost:4000/api/auth/register', {
+      await axios.post('/api/auth/register', {
         email: email,
         password: password,
         username: username

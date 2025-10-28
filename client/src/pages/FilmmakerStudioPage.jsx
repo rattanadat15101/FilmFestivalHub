@@ -23,7 +23,7 @@ function FilmmakerStudioPage() {
     setError(''); // เคลียร์ Error เก่า
     try {
       const response = await axios.get(
-        'http://localhost:4000/api/filmmaker/my-films', // Endpoint ดึงหนังของตัวเอง
+        '/api/filmmaker/my-films', // Endpoint ดึงหนังของตัวเอง
         { headers: { Authorization: `Bearer ${session.access_token}` } }
       );
       if (Array.isArray(response.data)) {

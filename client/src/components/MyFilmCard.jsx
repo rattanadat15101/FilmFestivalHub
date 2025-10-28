@@ -31,7 +31,7 @@ function MyFilmCard({ film, onActionComplete }) {
     }
     try {
       const response = await axios.put(
-        `http://localhost:4000/api/filmmaker/film/${film.id}/toggle-premium`,
+        `/api/filmmaker/film/${film.id}/toggle-premium`,
         { makePremium: newPremiumStatus },
         { headers: { Authorization: `Bearer ${session.access_token}` } }
       );
@@ -56,7 +56,7 @@ function MyFilmCard({ film, onActionComplete }) {
     }
     try {
       await axios.delete(
-        `http://localhost:4000/api/filmmaker/film/${film.id}`,
+        `/api/filmmaker/film/${film.id}`,
         { headers: { Authorization: `Bearer ${session.access_token}` } }
       );
       console.log(`[MyFilmCard] Film ${film.id} deleted successfully.`);
@@ -80,7 +80,7 @@ function MyFilmCard({ film, onActionComplete }) {
     }
     try {
       const response = await axios.post(
-        'http://localhost:4000/api/user/request-qa',
+        '/api/user/request-qa',
         { filmId: film.id, scheduledAt: qaTime },
         { headers: { Authorization: `Bearer ${session.access_token}` } }
       );

@@ -61,7 +61,7 @@ function SubscriptionPage() {
     try {
       // 1. เรียก Backend (Node.js)
       await axios.post(
-        'http://localhost:4000/api/user/mock-subscribe',
+        '/api/user/mock-subscribe',
         {}, // Body ว่าง
         {
           headers: {

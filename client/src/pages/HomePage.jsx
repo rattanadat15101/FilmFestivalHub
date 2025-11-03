@@ -139,12 +139,12 @@ function HomePage() {
       {loading && <div style={{ color: '#e5b80b', textAlign: 'center', fontSize: '1.2rem' }}>Loading films...</div>}
       {error && <div style={{ color: '#E74C3C', textAlign: 'center', fontSize: '1.2rem' }}>Error: {error}</div>}
       {!loading && !error && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '25px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '25px' }}>
           {Array.isArray(films) && films.length > 0 ? (
             films.map(film => (
               // Film Card container
               <div key={film.id} style={{ borderRadius: '6px', overflow: 'hidden', backgroundColor: '#222', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.4)', transition: 'transform 0.2s ease', cursor: 'pointer' }}
-                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.03)'} // Slight zoom on hover
+                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'} // Slight zoom on hover
                   onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
               >
                 {/* Link wrapping the image */}

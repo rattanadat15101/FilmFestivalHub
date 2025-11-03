@@ -16,6 +16,41 @@ const upload = multer({ storage: storage }).fields([
 ]);
 
 // ---
+// ✅ NEW: GET /api/filmmaker/films (alias)
+// ใช้แทน /my-films (กัน frontend เก่าเรียกผิด)
+// ---
+router.get('/films', authMiddleware, async (req, res) => {
+  const { id: userId } = req.user;
+  console.log(`[Backend] GET /api/filmmaker/films by user ${userId}`);
+
+  try {
+    const { data, error } = await supabase
+      .from('films')
+      .select(`
+        id,
+        title,
+        status,
+        poster_url,
+        is_premium,
+        view_count,
+        live_qas ( id, status, scheduled_at, stream_url )
+      `)
+      .eq('filmmaker_id', userId)
+      .order('id', { ascending: false });
+
+    if (error) {
+      console.error("Error fetching /films:", error);
+      throw error;
+    }
+    res.json(data);
+  } catch (err) {
+    console.error("Error fetching user films (alias /films):", err);
+    res.status(500).json({ message: 'Error fetching user films', error: err.message });
+  }
+});
+
+
+// ---
 // GET /api/filmmaker/my-films
 // (Filmmaker) ดึงหนังทั้งหมดของตัวเองสำหรับหน้า Creator Studio
 // ---
@@ -30,15 +65,15 @@ router.get('/my-films', authMiddleware, async (req, res) => {
         status, 
         poster_url,
         is_premium,
-        view_count, // ⬅️ เพิ่ม
+        view_count,
         live_qas ( id, status, scheduled_at, stream_url )
       `)
       .eq('filmmaker_id', userId)
-      .order('id', { ascending: false }); // เรียงจากใหม่ไปเก่า
+      .order('id', { ascending: false });
 
     if (error) {
-        console.error("Error fetching my-films:", error);
-        throw error;
+      console.error("Error fetching my-films:", error);
+      throw error;
     }
     res.json(data);
   } catch (err) {
@@ -46,6 +81,118 @@ router.get('/my-films', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Error fetching user films', error: err.message });
   }
 });
+
+
+// ---
+// POST /api/filmmaker/upload
+// (Filmmaker/Admin) อัปโหลดหนังใหม่
+// ---
+router.post(
+  '/upload',
+  authMiddleware,
+  upload, // ใช้ multer แบบ .fields()
+  async (req, res) => {
+    const { id: userId } = req.user;
+    const { title, synopsis, genreIds: genreIdsString } = req.body;
+    
+    const videoFile = req.files['filmVideo']?.[0];
+    const posterFile = req.files['filmPoster']?.[0];
+
+    let genreIds = [];
+    if (genreIdsString) {
+      try {
+        genreIds = JSON.parse(genreIdsString);
+        if (!Array.isArray(genreIds)) genreIds = [];
+      } catch (e) {
+        console.warn("Could not parse genreIds:", genreIdsString);
+        genreIds = [];
+      }
+    }
+
+    if (!videoFile) {
+      return res.status(400).json({ message: 'No video file provided.' });
+    }
+
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_filmmaker, is_admin')
+        .eq('id', userId)
+        .single();
+      if (profileError || (!profile.is_filmmaker && !profile.is_admin)) {
+        return res.status(403).json({ message: 'Forbidden. Filmmaker or Admin access required.' });
+      }
+
+      const videoFileName = `${userId}/${Date.now()}_video_${videoFile.originalname}`;
+      const { error: videoUploadError } = await supabase.storage
+        .from('films')
+        .upload(videoFileName, videoFile.buffer, { contentType: videoFile.mimetype, cacheControl: '3600' });
+      if (videoUploadError) throw videoUploadError;
+      const { data: videoUrlData } = supabase.storage.from('films').getPublicUrl(videoFileName);
+      const videoPublicUrl = videoUrlData.publicUrl;
+
+      let posterPublicUrl = null;
+      if (posterFile) {
+        const posterFileName = `${userId}/${Date.now()}_poster_${posterFile.originalname}`;
+        const { error: posterUploadError } = await supabase.storage
+          .from('films')
+          .upload(posterFileName, posterFile.buffer, { contentType: posterFile.mimetype, cacheControl: '3600' });
+        
+        if (!posterUploadError) {
+          const { data: posterUrlData } = supabase.storage.from('films').getPublicUrl(posterFileName);
+          posterPublicUrl = posterUrlData.publicUrl;
+        } else {
+          console.error("Error uploading poster:", posterUploadError);
+        }
+      }
+
+      const status = profile.is_admin ? 'approved' : 'pending';
+      const { data: newFilm, error: filmInsertError } = await supabase
+        .from('films')
+        .insert({
+          title,
+          synopsis,
+          video_url: videoPublicUrl,
+          poster_url: posterPublicUrl,
+          filmmaker_id: userId,
+          status
+        })
+        .select('id')
+        .single();
+
+      if (filmInsertError) throw filmInsertError;
+
+      if (genreIds.length > 0) {
+        const filmGenreData = genreIds.map(genreId => ({
+          film_id: newFilm.id,
+          genre_id: parseInt(genreId)
+        }));
+        const { error: genreInsertError } = await supabase
+          .from('film_genres')
+          .insert(filmGenreData);
+        if (genreInsertError) console.error("Error inserting genres:", genreInsertError);
+      }
+
+      res.status(201).json({
+        message: status === 'approved'
+          ? 'Film uploaded and approved successfully.'
+          : 'Film uploaded successfully. Pending approval.'
+      });
+
+    } catch (err) {
+      console.error('Upload Error:', err);
+      res.status(500).json({ message: 'Error uploading film', error: err.message });
+    }
+  }
+);
+
+
+// ---
+// (ต่อส่วน edit, toggle-premium, delete เหมือนของเดิม)
+// ---
+
+
+
 
 
 // ---

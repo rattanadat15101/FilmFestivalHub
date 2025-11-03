@@ -154,18 +154,28 @@ function HomePage() {
                 {/* Text and buttons section */}
                 <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
                   <div>
-                      {/* Title and Rating */}
+                      {/* 🔽 1. แก้ไขส่วน Title และ Rating/Views 🔽 */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                           <h3 style={{ margin: 0, fontSize: '1.1em', color: '#e5b80b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexGrow: 1, marginRight: '10px' }}>
                             {film.title}
                             {film.is_premium && <span style={{ color: '#f06', fontSize: '0.8em', marginLeft: '5px' }}>★</span>}
                           </h3>
-                          {/* Display Rating */}
-                          {film.avg_rating !== null && typeof film.avg_rating !== 'undefined' && (
-                              <span style={{ color: '#e5b80b', fontWeight: 'bold', fontSize: '1.0em', flexShrink: 0 }}>
-                                  ⭐ {Number(film.avg_rating).toFixed(1)} {/* Ensure one decimal place */}
-                              </span>
-                          )}
+                          
+                          {/* 🔽 2. จัดกลุ่ม Rating และ Views 🔽 */}
+                          <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, gap: '8px' }}>
+                              {/* Display Rating */}
+                              {film.avg_rating !== null && typeof film.avg_rating !== 'undefined' && (
+                                  <span style={{ color: '#e5b80b', fontWeight: 'bold', fontSize: '1.0em' }}>
+                                      ⭐ {Number(film.avg_rating).toFixed(1)}
+                                  </span>
+                              )}
+                              {/* 3. ⭐️ แสดงยอดวิว (ถ้ามี) ⭐️ */}
+                              {film.view_count !== null && typeof film.view_count !== 'undefined' && (
+                                  <span style={{ color: '#aaa', fontSize: '0.9em' }}>
+                                      👁️ {film.view_count.toLocaleString()}
+                                  </span>
+                              )}
+                          </div>
                       </div>
                       {/* Genres */}
                       <p style={{ fontSize: '0.8em', color: '#aaa', margin: '0 0 10px 0', minHeight: '1.2em' }}> {/* Ensure space even if no genres */}

@@ -30,6 +30,7 @@ router.get('/my-films', authMiddleware, async (req, res) => {
         status, 
         poster_url,
         is_premium,
+        view_count, // ⬅️ เพิ่ม
         live_qas ( id, status, scheduled_at, stream_url )
       `)
       .eq('filmmaker_id', userId)
@@ -127,6 +128,7 @@ router.post(
           poster_url: posterPublicUrl,
           filmmaker_id: userId,
           status: status
+          // view_count จะใช้ default 0
         })
         .select('id') // เอา ID หนังใหม่กลับมา
         .single();

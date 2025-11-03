@@ -1,7 +1,8 @@
 // /client/src/pages/FilmDetailPage.jsx
 import React from 'react';
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom'; // Import Link
+// 🔽 1. เพิ่ม useState และ useCallback
+import { useState, useEffect, useCallback } from 'react'; 
+import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext'; // Path นี้ถูกต้อง
 import axios from 'axios';
 import ReactPlayer from 'react-player';
@@ -18,6 +19,9 @@ function FilmDetailPage() {
   const [error, setError] = useState(null); // เก็บข้อความ Error
   const [isPremiumBlocked, setIsPremiumBlocked] = useState(false); // เช็กว่าโดนบล็อกเพราะ Premium ไหม
   const [reviewListKey, setReviewListKey] = useState(Date.now()); // Key สำหรับ re-render ReviewList
+  
+  // 🔽 2. เพิ่ม State สำหรับจำว่าบวกวิวไปหรือยัง
+  const [hasIncrementedView, setHasIncrementedView] = useState(false);
 
   useEffect(() => {
     // รีเซ็ตสถานะเมื่อ filmId เปลี่ยน
@@ -25,6 +29,9 @@ function FilmDetailPage() {
     setError(null);
     setIsPremiumBlocked(false);
     setLoading(true);
+    
+    // 🔽 (สำคัญ) รีเซ็ตตัวนับวิวทุกครั้งที่ ID หนังเปลี่ยน
+    setHasIncrementedView(false); 
 
     if (!session?.access_token) {
         // ถ้าไม่มี session token ให้หยุดโหลด (ProtectedRoute ควรจัดการแล้ว แต่ป้องกันไว้)
@@ -44,6 +51,7 @@ function FilmDetailPage() {
           }
         );
         // ถ้าสำเร็จ (Status 200)
+        // (API นี้จะไม่บวกวิวแล้ว)
         setFilm(response.data);
         setIsPremiumBlocked(false);
         setError(null);
@@ -78,6 +86,35 @@ function FilmDetailPage() {
   }, [filmId, session]); // Dependency คือ filmId และ session
 
 
+  // 🔽 3. เพิ่มฟังก์ชันสำหรับยิง API เมื่อกด Play
+  const handleIncrementView = useCallback(async () => {
+    // ถ้าเคยบวกไปแล้ว หรือ session ยังไม่พร้อม ให้หยุด
+    if (hasIncrementedView || !session?.access_token) {
+      return;
+    }
+    
+    // ตั้งค่าทันทีว่า "กำลังจะบวก" (กันการกด play/pause รัวๆ)
+    setHasIncrementedView(true);
+    
+    try {
+      // ยิง API ใหม่ที่เราสร้างขึ้น (แบบยิงแล้วลืม ไม่ต้องรอ)
+      await axios.post(
+        `/api/films/${filmId}/increment-view`,
+        {}, // body ว่าง
+        {
+          headers: { Authorization: `Bearer ${session.access_token}` }
+        }
+      );
+      console.log(`[View] Incremented view for film ${filmId}`);
+    } catch (err) {
+      // ถ้าพัง ก็แค่ log ไว้ ไม่ต้องโชว์ Error ให้ User
+      console.error("Failed to increment view:", err.response?.data?.message || err);
+      // (ถ้าพัง เราอาจจะยอมให้ลองใหม่รอบหน้าก็ได้)
+      // setHasIncrementedView(false); 
+    }
+  }, [filmId, session, hasIncrementedView]); // ทำงานเมื่อตัวแปรเหล่านี้เปลี่ยน
+
+
   // Styles
   const pageStyle = { padding: '2rem', maxWidth: '1000px', margin: '0 auto' }; // กว้างขึ้นเล็กน้อย
   const errorBoxStyle = { border: '2px dashed #E74C3C', padding: '2rem', textAlign: 'center', background: '#2f1a1a', borderRadius: '8px', color: '#f4f4f4' };
@@ -103,6 +140,12 @@ function FilmDetailPage() {
                 <>
                   <h1 style={{...titleStyle, color: '#e5b80b' }}>{film.title} (Premium)</h1>
                   <p style={synopsisStyle}>{film.synopsis}</p>
+                   {/* ⭐️ แสดงยอดวิว (ถ้ามี) ⭐️ */}
+                   {film.view_count !== null && typeof film.view_count !== 'undefined' && (
+                       <p style={{ color: '#ccc', fontSize: '1.1em' }}>
+                           <strong>Views:</strong> {film.view_count.toLocaleString()}
+                       </p>
+                   )}
                 </>
             ) : (
                 <h1 style={{...titleStyle, color: '#e5b80b' }}>Premium Content Locked</h1>
@@ -131,6 +174,15 @@ function FilmDetailPage() {
           <h1 style={titleStyle}>{film.title}</h1>
           <p style={synopsisStyle}>{film.synopsis}</p>
 
+          {/* 🔽⭐️ แสดงยอดวิว (ถ้ามี) ⭐️🔽 */}
+          {film.view_count !== null && typeof film.view_count !== 'undefined' && (
+             <div style={{ color: '#ccc', marginBottom: '1.5rem', fontSize: '1.1em', borderBottom: '1px solid #333', paddingBottom: '1.5rem' }}>
+                <span style={{ marginRight: '1.5rem' }}>
+                    <strong>Views:</strong> {film.view_count.toLocaleString()}
+                </span>
+             </div>
+          )}
+
           {/* --- Player --- */}
           <div style={playerWrapperStyle}>
             <ReactPlayer
@@ -139,6 +191,8 @@ function FilmDetailPage() {
               width="100%"
               height="100%"
               style={playerStyle}
+              // 🔽 4. (สำคัญ!) เพิ่ม prop onPlay
+              onPlay={handleIncrementView}
               // Optional: Add config for specific players if needed
               // config={{ youtube: { playerVars: { showinfo: 1 } } }}
             />

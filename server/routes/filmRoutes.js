@@ -45,11 +45,12 @@ router.get('/:id', authMiddleware, async (req, res) => {
   const { id: filmId } = req.params;
   const { id: userId } = req.user;
   try {
-    // ดึงข้อมูลหนัง, ผู้สร้าง, และ genres
+    // ดึงข้อมูลหนัง, ผู้สร้าง, และ genres (และ view_count)
     const { data: film, error: filmError } = await supabase
       .from('films')
       .select(`
           *,
+          view_count, 
           profiles:filmmaker_id ( username ),
           film_genres ( genres ( id, name ) )
       `)
@@ -88,11 +89,14 @@ router.get('/:id', authMiddleware, async (req, res) => {
               genres: formattedFilm.genres,
               profiles: formattedFilm.profiles,
               created_at: formattedFilm.created_at,
-              is_premium: formattedFilm.is_premium
+              is_premium: formattedFilm.is_premium,
+              view_count: formattedFilm.view_count // ⬅️ เพิ่ม
           }
         });
       }
     }
+    
+    // 🛑 (สำคัญ) เราลบ Logic การบวกวิวออกจากตรงนี้
     
     // ถ้าผ่านหมด ส่งข้อมูลหนังกลับไป
     res.json(formattedFilm);
@@ -102,6 +106,50 @@ router.get('/:id', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Server error fetching film details', error: err.message });
   }
 });
+
+// ---
+// 🔽 (เพิ่มใหม่) Route นี้สำหรับรับการ "กด Play" จาก Client
+// POST /api/films/:id/increment-view
+// ---
+router.post('/:id/increment-view', authMiddleware, async (req, res) => {
+  const { id: filmId } = req.params;
+  const { id: userId } = req.user;
+
+  try {
+    // (ทางเลือก) เช็กก่อนว่าคนดูเป็นเจ้าของหนังหรือไม่
+    const { data: film, error: filmError } = await supabase
+      .from('films')
+      .select('filmmaker_id')
+      .eq('id', filmId)
+      .single();
+
+    if (filmError || !film) {
+      return res.status(404).json({ message: 'Film not found.' });
+    }
+
+    // ถ้าคนดูเป็นเจ้าของหนัง... ไม่ต้องนับวิว!
+    if (film.filmmaker_id === userId) {
+      return res.status(200).json({ message: 'Owner view. Not incremented.' });
+    }
+
+    // ถ้าเป็นคนอื่นดู ให้เรียก RPC เพื่อบวกวิว
+    const { error: rpcError } = await supabase.rpc('increment_view', { 
+      film_id_to_inc: parseInt(filmId) 
+    });
+    
+    if (rpcError) {
+      console.error(`[Increment View] RPC Error for film ${filmId}:`, rpcError);
+      throw rpcError;
+    }
+
+    res.status(200).json({ message: 'View incremented.' });
+
+  } catch (err) {
+    console.error(`[Increment View] Server Error for film ${filmId}:`, err);
+    res.status(500).json({ message: 'Server error incrementing view.' });
+  }
+});
+
 
 // ---
 // GET /api/films/recommendations

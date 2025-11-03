@@ -143,6 +143,12 @@ function MyFilmCard({ film, onActionComplete }) {
           </p>
          ) : ( <p style={{ color: '#aaa' }}>No Q&A requested.</p> )}
         <p><strong>Access:</strong> {isPremium ? <span style={{ color: '#f06', fontWeight: 'bold' }}> Premium</span> : <span> Standard</span>}</p>
+        
+        {/* 🔽⭐️ แสดงยอดวิว (ถ้ามี) ⭐️🔽 */}
+        {film.view_count !== null && typeof film.view_count !== 'undefined' && (
+           <p style={{margin: '8px 0'}}><strong>Views:</strong> {film.view_count.toLocaleString()}</p>
+        )}
+
         {/* Feedback Message */}
         {message && <p style={{ fontSize: '0.9em', color: message.includes('Failed') || message.includes('Error') ? 'red' : 'lightgreen', marginTop: '0.5rem', fontWeight: 'bold' }}>{message}</p>}
       </div>
